@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 class ViewController: UIViewController {
 
@@ -14,8 +15,10 @@ class ViewController: UIViewController {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
+        if Auth.auth().currentUser != nil {
+            performSegue(withIdentifier: "ToChatVC", sender: self)
+        }
     }
-    
     
     @IBAction func loginClicked(_ sender: Any) {
         performSegue(withIdentifier: "ToLoginVC", sender: self)
@@ -24,6 +27,4 @@ class ViewController: UIViewController {
     @IBAction func registerClicked(_ sender: Any) {
         performSegue(withIdentifier: "ToRegisterVC", sender: self)
     }
-    
-    
 }

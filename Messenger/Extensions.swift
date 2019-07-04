@@ -14,3 +14,11 @@ class RoundedBlueButton : UIButton {
         layer.cornerRadius = 8
     }
 }
+
+
+class RoaundedUIView : UIView {
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        layer.cornerRadius = 5
+    }
+}

@@ -72,11 +72,12 @@
                     <connections>
                         <segue destination="5V2-6F-2NJ" kind="show" identifier="ToLoginVC" id="eKB-DL-9jk"/>
                         <segue destination="BYZ-38-t0r" kind="show" identifier="ToRegisterVC" id="YeM-ZP-fOp"/>
+                        <segue destination="twe-9Y-3p9" kind="show" identifier="ToChatVC" id="YGD-Vs-i6P"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="IxZ-wi-ugH" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2760.8000000000002" y="-188.42364532019704"/>
+            <point key="canvasLocation" x="2679" y="-188"/>
         </scene>
         <!--LoginVC-->
         <scene sceneID="yTR-wI-lan">
@@ -147,7 +148,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="P9N-b7-Gda" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="3918.8405797101454" y="-465.40178571428567"/>
+            <point key="canvasLocation" x="3918" y="-601"/>
         </scene>
         <!--ChatVC-->
         <scene sceneID="o6O-Sl-02I">
@@ -217,7 +218,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="9eI-aU-ebU" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="5237.6000000000004" y="-164.77832512315271"/>
+            <point key="canvasLocation" x="5135" y="-188"/>
         </scene>
         <!--RegisterVC-->
         <scene sceneID="tne-QT-ifu">

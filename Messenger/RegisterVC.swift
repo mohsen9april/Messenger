@@ -25,6 +25,14 @@ class RegisterVC: UIViewController {
         super.viewDidLoad()
         self.title = "Register"
         
+        
+        //Select Image for Profile
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleImagePicker))
+        tap.numberOfTapsRequired = 1
+        UserProfile.isUserInteractionEnabled = true
+        UserProfile.addGestureRecognizer(tap)
+        UserProfile.layer.cornerRadius = UserProfile.frame.width / 2
+        
         passCheckImage.isHidden = true
         confirmPassCheckImage.isHidden = true
         registerBtn.isEnabled = false
@@ -37,6 +45,10 @@ class RegisterVC: UIViewController {
         emailTxt.addTarget(self, action: #selector(handleRegisterBtn), for: UIControl.Event.editingChanged)
         passwordTtx.addTarget(self, action: #selector(handleRegisterBtn) , for: UIControl.Event.editingChanged)
         confirmPassTxt.addTarget(self, action: #selector(handleRegisterBtn), for: UIControl.Event.editingChanged)
+    }
+    
+    @objc func handleImagePicker(){
+        lunchImagePicker()
     }
     
     @objc func handleRegisterBtn(){
@@ -87,8 +99,78 @@ class RegisterVC: UIViewController {
                 return
             }
             print("Register Successfuly !")
-            self.activityIndicator.stopAnimating()
-            self.performSegue(withIdentifier: "ToChatVC", sender: self)
+            
+            //Upload userprofile Image to Database and retrive to use in chatVC
+            
+            //Make sure image is not Empty
+            guard let image = self.UserProfile.image else { return }
+            // Step 1 : Turn the image into Data
+            guard let uploadData = image.jpegData(compressionQuality: 0.3) else { return }
+            // Step 2 : Create an Storage Image reference -> a location in firestorage for it to be stored.
+            let fileName = NSUUID().uuidString
+            let imageRef = Storage.storage().reference().child("UserProfileImage").child(fileName)
+            // Step 3 : Set to the meta data
+            let metaData = StorageMetadata()
+            metaData.contentType = "image/jpg"
+            // Step 4 : Upload the data
+            imageRef.putData(uploadData, metadata: metaData, completion: { (metaData, error) in
+                if let error = error {
+                    debugPrint(error.localizedDescription)
+                    return
+                }
+                
+                imageRef.downloadURL(completion: { (url, error) in
+                    if let error = error {
+                        debugPrint(error.localizedDescription)
+                        return
+                    }
+                    
+                    guard let url = url else { return }
+                    print("successfuly upoad profile image in this is link :")
+                    print(url)
+                    
+                    //Save usernname and userprofile Image to Database
+                    let currentUser = Auth.auth().currentUser
+                    guard let uid = currentUser?.uid else { return }
+                    
+                    let userValue = ["username" : username , "userProfileImage" : url.absoluteString]
+                    let values = [uid : userValue ]
+                    Database.database().reference().child("Users").updateChildValues(values, withCompletionBlock: { (Error , reference) in
+                        if let error = Error {
+                            print("Failed to save user info to database")
+                            debugPrint(error.localizedDescription)
+                            return
+                        }
+                        print("Save Username  in Database successfuly !")
+                        self.activityIndicator.stopAnimating()
+                        self.performSegue(withIdentifier: "ToChatVC", sender: self)
+                        
+                    })
+                })
+            })
         }
     }
+}
+
+
+extension RegisterVC : UIImagePickerControllerDelegate , UINavigationControllerDelegate{
+    
+    func lunchImagePicker(){
+        let imagePicker = UIImagePickerController()
+        imagePicker.delegate = self
+        imagePicker.allowsEditing = true
+        present(imagePicker, animated: true, completion: nil)
+    }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        guard let editingImage = info[.editedImage] as? UIImage else { return }
+        UserProfile.contentMode = .scaleAspectFill
+        UserProfile.image = editingImage
+        dismiss(animated: true, completion: nil)
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        dismiss(animated: true, completion: nil)
+    }
+ 
 }

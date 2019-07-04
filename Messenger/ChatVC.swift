@@ -11,20 +11,20 @@ import Firebase
 import ChameleonFramework
 
 class ChatVC: UIViewController, UITableViewDelegate , UITableViewDataSource, UITextFieldDelegate {
-    
-   //let MessageArray = ["FirstMassage", "SecondMassage","ThirdMassageThirdMassageThirdMassageThirdMassageThirdMassageThirdMassageThirdMassageThirdMassageThirdMassageThirdMassageThirdMassageThirdMassageThirdMassageThirdMassageThirdMassage"]
 
     var messageArray : [Message] = [Message]()
+    var userProfile : User?
     
     @IBOutlet weak var heightConstraint: NSLayoutConstraint!
     @IBOutlet weak var messageTextField: UITextField!
     @IBOutlet weak var messageTableView: UITableView!
     @IBOutlet weak var messageSendButton: UIButton!
-    
 
     override func viewDidLoad() {
         super.viewDidLoad()
         self.navigationItem.hidesBackButton = true
+        
+        fetchUser()
         
         messageTextField.delegate = self
 
@@ -37,7 +37,10 @@ class ChatVC: UIViewController, UITableViewDelegate , UITableViewDataSource, UIT
         messageTableView.dataSource = self
         messageTableView.register(UINib(nibName: "TableViewCell", bundle: nil), forCellReuseIdentifier: "customMessageCell")
     
-        configureTableview()
+        //configureTableview heightSize
+        messageTableView.rowHeight = UITableView.automaticDimension
+        messageTableView.estimatedRowHeight = UITableView.automaticDimension
+        
         retriveMessages()
         
         //Set a Logout BarButton
@@ -64,21 +67,22 @@ class ChatVC: UIViewController, UITableViewDelegate , UITableViewDataSource, UIT
             let snapshot = snapshot.value as! Dictionary<String,String>
             let text = snapshot["MessageBody"]!
             let sender = snapshot["Sender"]!
+            let username = snapshot["username"]!
+            let userProfileImage = snapshot["userProfileImage"]!
             
             let message = Message()
             message.sender = sender
             message.messageBody = text
+            message.userProfileImage = userProfileImage
+            message.username = username
             
             self.messageArray.append(message)
-            self.configureTableview()
             self.messageTableView.reloadData()
-            
-            
-
         }
     }
 
     @IBAction func messageSendButton(_ sender: Any) {
+        
         messageTextField.endEditing(true )
         
         messageTextField.isEnabled = false
@@ -87,7 +91,12 @@ class ChatVC: UIViewController, UITableViewDelegate , UITableViewDataSource, UIT
         let messageDB = Database.database().reference().child("Messages")
         let sender = Auth.auth().currentUser?.email
         guard let messageBody = messageTextField.text else { return }
-        let messageDictionary = ["Sender": sender,"MessageBody" : messageBody ]
+        guard let userProfileImage = userProfile?.avatar else { return }
+        guard let username = userProfile?.username else { return }
+        let messageDictionary = ["Sender": sender,
+                                 "MessageBody" : messageBody ,
+                                 "userProfileImage" : userProfileImage ,
+                                 "username" : username ]
         messageDB.childByAutoId().setValue(messageDictionary) { (Error, reference) in
             if let error = Error {
                 debugPrint(error.localizedDescription)
@@ -100,6 +109,21 @@ class ChatVC: UIViewController, UITableViewDelegate , UITableViewDataSource, UIT
         }
     }
     
+    func fetchUser(){
+        
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        Database.database().reference().child("Users").child(uid).observeSingleEvent(of: DataEventType.value) { (snapshot) in
+            print("snapshot is : ")
+            print(snapshot)
+            
+            guard let dictionary = snapshot.value as? [ String :Any ] else { return }
+            let username = dictionary["username"] as? String
+            self.title = username
+            self.userProfile = User(dictionary: dictionary)
+            self.messageTableView.reloadData()
+
+        }
+    }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
             return messageArray.count
@@ -108,8 +132,15 @@ class ChatVC: UIViewController, UITableViewDelegate , UITableViewDataSource, UIT
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell =  tableView.dequeueReusableCell(withIdentifier: "customMessageCell", for: indexPath) as! TableViewCell
         cell.messageBody.text = messageArray[indexPath.row].messageBody
-        cell.senderUsername.text = messageArray[indexPath.row].sender
+        cell.senderUsername.text = messageArray[indexPath.row].username
         cell.avatarImageView.image = UIImage(named: "egg.png")
+        
+        
+        let url = URL(string: messageArray[indexPath.row].userProfileImage)
+        let data = try? Data(contentsOf: url!)
+        cell.avatarImageView.image = UIImage(data: data!)
+
+        
         
         if cell.senderUsername.text == Auth.auth().currentUser?.email {
             cell.avatarImageView.backgroundColor = UIColor.flatMint()
@@ -122,16 +153,11 @@ class ChatVC: UIViewController, UITableViewDelegate , UITableViewDataSource, UIT
         return cell
     }
     
-    func configureTableview(){
-//        messageTableView.rowHeight = UITableView.automaticDimension
-//        messageTableView.estimatedRowHeight = 120.0
-    }
-    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         messageTableView.deselectRow(at: indexPath, animated: true)
     }
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 120
+        return UITableView.automaticDimension
     }
 
     func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -148,3 +174,17 @@ class ChatVC: UIViewController, UITableViewDelegate , UITableViewDataSource, UIT
         }
     }
 }
+
+
+struct User {
+    
+    let username : String
+    let avatar : String
+    
+    init(dictionary:  [String : Any] ) {
+        self.username = dictionary["username"] as? String ?? ""
+        self.avatar = dictionary["userProfileImage"] as? String ?? ""
+    }
+    
+}
+
